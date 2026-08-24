@@ -38,6 +38,8 @@
     "type": "git",
     "url": "git+https://github.com/btboys/dsh-advisors.git"
   },
+  "homepage": "https://github.com/btboys/dsh-advisors#readme",
+  "bugs": "https://github.com/btboys/dsh-advisors/issues",
   "scripts": {
     "build": "npm run build:host && npm run build:client",
     "build:host": "tsc",
