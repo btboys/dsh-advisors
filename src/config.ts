@@ -133,6 +133,15 @@ function clean(value: string | undefined): string | undefined {
 }
 
 /**
+ * Effective review switch for one session: a session-level override (set from
+ * the composer toolbar chip) wins over the global `enabled` flag; absent an
+ * override the session follows the global switch.
+ */
+export function resolveSessionEnabled(globalEnabled: boolean, override: boolean | undefined): boolean {
+  return override ?? globalEnabled
+}
+
+/**
  * Resolve one roster entry (from patch config or a roster file) against
  * plugin-level route defaults. `shared` is the shared instruction text
  * (patch-level plus accumulated roster-file instructions) prepended to the

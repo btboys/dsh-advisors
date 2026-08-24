@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { normalizeConfig, splitModelSelector } from '../lib/config.js'
+import { normalizeConfig, resolveSessionEnabled, splitModelSelector } from '../lib/config.js'
 import { parseNotes, buildSystemPrompt } from '../lib/reviewer.js'
 import { buildTranscript, isGenuineUserMessage } from '../lib/transcript.js'
 import { loadGuidance } from '../lib/guidance.js'
@@ -25,6 +25,12 @@ assert.equal(defaults.defaultAdvisor.name, 'Advisor')
 assert.deepEqual(defaults.defaultAdvisor.tools, ['read', 'grep', 'glob'])
 assert.equal(defaults.immuneTurns, 3)
 assert.equal(defaults.rosterFiles, true)
+
+// --- resolveSessionEnabled: session override wins over the global switch ---
+assert.equal(resolveSessionEnabled(true, undefined), true)
+assert.equal(resolveSessionEnabled(false, undefined), false)
+assert.equal(resolveSessionEnabled(true, false), false)
+assert.equal(resolveSessionEnabled(false, true), true)
 
 const roster = normalizeConfig({
   model: 'anthropic/claude-sonnet-4-5',

@@ -39,7 +39,9 @@ var import_react = require("react");
 var ADVISORS_RPC_CHANNEL = "/dsh-advisors";
 var ADVISORS_ENDPOINTS = Object.freeze({
   configGet: "advisors.config.get",
-  configSet: "advisors.config.set"
+  configSet: "advisors.config.set",
+  sessionGet: "advisors.session.get",
+  sessionSet: "advisors.session.set"
 });
 
 // client/AdvisorsSettings.jsx
@@ -355,6 +357,80 @@ function AdvisorsSettings({ rpcCall, loadModelCatalog, t }) {
   ] });
 }
 
+// client/AdvisorsToggle.jsx
+var import_react2 = require("react");
+var import_jsx_runtime2 = require("react/jsx-runtime");
+var STYLE_ID2 = "dsh-advisors-toggle-css";
+var CSS2 = `
+.dsha-chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.dsha-chip:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
+.dsha-chip:disabled{cursor:default;opacity:.55}
+.dsha-chipOn{color:var(--dsw-alias-state-business-primary,#3b82f6);border-color:var(--dsw-alias-state-business-primary,#3b82f6);background:var(--dsw-specific-tip,transparent)}
+.dsha-chipDot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+`;
+function ensureCss2() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(STYLE_ID2)) return;
+  const tag = document.createElement("style");
+  tag.id = STYLE_ID2;
+  tag.textContent = CSS2;
+  document.head.appendChild(tag);
+}
+function AdvisorsToggle({ session, rpcCall, t }) {
+  ensureCss2();
+  const sessionId = session?.sessionId;
+  const [state, setState] = (0, import_react2.useState)(null);
+  const [busy, setBusy] = (0, import_react2.useState)(false);
+  const aliveRef = (0, import_react2.useRef)(true);
+  (0, import_react2.useEffect)(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+  (0, import_react2.useEffect)(() => {
+    if (!sessionId || typeof rpcCall !== "function") return void 0;
+    const controller = new AbortController();
+    rpcCall(ADVISORS_RPC_CHANNEL, ADVISORS_ENDPOINTS.sessionGet, { sessionId }, controller.signal).then((result) => {
+      if (aliveRef.current && result.ok) setState(result.value);
+    }).catch(() => {
+    });
+    return () => controller.abort();
+  }, [sessionId, rpcCall]);
+  if (!sessionId || typeof rpcCall !== "function") return null;
+  const on = state ? Boolean(state.effective) : true;
+  const toggle = () => {
+    if (busy) return;
+    const next = !on;
+    const override = state && next === Boolean(state.globalEnabled) ? null : next;
+    setBusy(true);
+    rpcCall(ADVISORS_RPC_CHANNEL, ADVISORS_ENDPOINTS.sessionSet, { sessionId, enabled: override }).then((result) => {
+      if (aliveRef.current && result.ok) setState(result.value);
+    }).catch(() => {
+    }).finally(() => {
+      if (aliveRef.current) setBusy(false);
+    });
+  };
+  const overridden = state?.override !== null && state?.override !== void 0;
+  const title = on ? t(overridden ? "chip.on.overridden.title" : "chip.on.title") : t(overridden ? "chip.off.overridden.title" : "chip.off.title");
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+    "button",
+    {
+      type: "button",
+      className: on ? "dsha-chip dsha-chipOn" : "dsha-chip",
+      "aria-label": t(on ? "chip.on.aria" : "chip.off.aria"),
+      "aria-pressed": on,
+      title,
+      disabled: busy,
+      onClick: toggle,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsha-chipDot", "aria-hidden": "true" }),
+        t("chip.label")
+      ]
+    }
+  );
+}
+
 // client/locales.js
 var zh = {
   nav: "\u987E\u95EE",
@@ -393,7 +469,14 @@ var zh = {
   debugLog: "\u8BCA\u65AD\u65E5\u5FD7\u8DEF\u5F84",
   debugLogHint: "JSONL \u8BCA\u65AD\u6587\u4EF6\uFF1B\u7559\u7A7A\u5173\u95ED\u3002",
   rosterNote: "\u4E13\u5BB6\u540D\u518C advisors[] \u4ECD\u901A\u8FC7 cordis.patch.yml \u6216 WATCHDOG.yml / ADVISORS.yml \u914D\u7F6E\u3002",
-  inherit: "\uFF08\u6CBF\u7528\u9ED8\u8BA4\uFF09"
+  inherit: "\uFF08\u6CBF\u7528\u9ED8\u8BA4\uFF09",
+  "chip.label": "\u987E\u95EE",
+  "chip.on.aria": "\u672C\u4F1A\u8BDD\u987E\u95EE\u5BA1\u9605\u5DF2\u5F00\u542F\uFF0C\u70B9\u51FB\u5173\u95ED",
+  "chip.off.aria": "\u672C\u4F1A\u8BDD\u987E\u95EE\u5BA1\u9605\u5DF2\u5173\u95ED\uFF0C\u70B9\u51FB\u5F00\u542F",
+  "chip.on.title": "\u987E\u95EE\u5BA1\u9605\uFF1A\u672C\u4F1A\u8BDD\u5DF2\u5F00\u542F \u2014 \u70B9\u51FB\u5173\u95ED",
+  "chip.off.title": "\u987E\u95EE\u5BA1\u9605\uFF1A\u672C\u4F1A\u8BDD\u5DF2\u5173\u95ED \u2014 \u70B9\u51FB\u5F00\u542F",
+  "chip.on.overridden.title": "\u987E\u95EE\u5BA1\u9605\uFF1A\u672C\u4F1A\u8BDD\u5DF2\u5F00\u542F\uFF08\u8986\u76D6\u5168\u5C40\u8BBE\u7F6E\uFF09\u2014 \u70B9\u51FB\u5173\u95ED",
+  "chip.off.overridden.title": "\u987E\u95EE\u5BA1\u9605\uFF1A\u672C\u4F1A\u8BDD\u5DF2\u5173\u95ED\uFF08\u8986\u76D6\u5168\u5C40\u8BBE\u7F6E\uFF09\u2014 \u70B9\u51FB\u5F00\u542F"
 };
 var en = {
   nav: "Advisors",
@@ -432,7 +515,14 @@ var en = {
   debugLog: "Debug log path",
   debugLogHint: "JSONL diagnostics file; empty disables.",
   rosterNote: "Specialist advisors[] rosters stay in cordis.patch.yml or WATCHDOG.yml / ADVISORS.yml.",
-  inherit: "(inherit)"
+  inherit: "(inherit)",
+  "chip.label": "Advisors",
+  "chip.on.aria": "Advisor review on for this session, press to turn off",
+  "chip.off.aria": "Advisor review off for this session, press to turn on",
+  "chip.on.title": "Advisors: on for this session \u2014 click to turn off",
+  "chip.off.title": "Advisors: off for this session \u2014 click to turn on",
+  "chip.on.overridden.title": "Advisors: on for this session (overrides the global switch) \u2014 click to turn off",
+  "chip.off.overridden.title": "Advisors: off for this session (overrides the global switch) \u2014 click to turn on"
 };
 
 // client/index.jsx
@@ -461,6 +551,13 @@ function apply(ctx) {
     locale: NS,
     inject: () => ({ rpcCall, loadModelCatalog })
   }, AdvisorsSettings));
+  ctx.slots.inject("conversation.input.left", () => ctx.slots.register({
+    name: "conversation.input.left",
+    id: "advisors",
+    order: 50,
+    locale: NS,
+    inject: () => ({ rpcCall })
+  }, AdvisorsToggle));
 }
 
     return module.exports;

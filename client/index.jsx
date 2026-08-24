@@ -1,8 +1,10 @@
 /**
- * Browser half: registers a top-level "顾问 / Advisors" settings section.
+ * Browser half: registers a top-level "顾问 / Advisors" settings section and a
+ * per-session on/off chip in the composer toolbar (`conversation.input.left`).
  * Talks to the host over loopback-only /dsh-advisors RPC.
  */
 import { AdvisorsSettings } from './AdvisorsSettings.jsx'
+import { AdvisorsToggle } from './AdvisorsToggle.jsx'
 import { en, zh } from './locales.js'
 
 const NS = 'settings.advisors'
@@ -36,4 +38,13 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ rpcCall, loadModelCatalog }),
   }, AdvisorsSettings))
+
+  // Per-session review switch chip in the composer toolbar's left cluster.
+  ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
+    name: 'conversation.input.left',
+    id: 'advisors',
+    order: 50,
+    locale: NS,
+    inject: () => ({ rpcCall }),
+  }, AdvisorsToggle))
 }

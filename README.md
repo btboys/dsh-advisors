@@ -54,6 +54,8 @@ dsh plugin --profile headless add dsh-advisors  # headless
 
 Web 端可在 **设置 → 顾问** 里改常用开关与路由（保存后写入 `~/.dsh/advisors/config.json`，热更新，无需重启）。专家名册 `advisors[]` 仍走配置文件 / 名册文件。
 
+此外，Web 端**对话框工具栏**有一个「顾问」chip，是**会话级开关**：点击只为当前会话开启/关闭审阅（覆盖全局 `enabled`），再次点击回到与全局一致时自动清除覆盖。覆盖状态仅保存在内存中，会话结束或 profile 重启即消失。
+
 也可以继续用配置文件控制（`~/.dsh/profiles/<profile>/cordis.patch.yml` 中按 `id: advisors` 覆盖，或 `$DSH_HOME/cordis.patch.yml` 全局覆盖）。**没有 slash command**——开关就是 `enabled` 或整条 `disabled: true`。
 
 ```yaml

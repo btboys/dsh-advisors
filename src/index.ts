@@ -8,6 +8,7 @@
  * entry to turn reviews off; the plugin still mounts so the settings page works.
  */
 import type { Context } from '@deepseek-ai/cordis'
+import type { SessionId } from '@deepseek-ai/dsh-session'
 import { AdvisorService } from './service.js'
 import type { AdvisorsPluginConfig } from './config.js'
 import { loadPersistedConfig, mergePersisted, persistConfig } from './persist.js'
@@ -54,6 +55,8 @@ export function apply(ctx: Context, config?: AdvisorsPluginConfig): AdvisorServi
         }
         return next
       },
+      readSession: (sessionId) => service.getSessionAdvise(sessionId as SessionId),
+      writeSession: (sessionId, enabled) => service.setSessionAdvise(sessionId as SessionId, enabled),
     },
     ctx.logger,
   )
@@ -73,7 +76,8 @@ export function apply(ctx: Context, config?: AdvisorsPluginConfig): AdvisorServi
 }
 
 export { AdvisorService } from './service.js'
-export { normalizeConfig, resolveAdvisorEntry, splitModelSelector } from './config.js'
+export type { SessionAdviseState } from './service.js'
+export { normalizeConfig, resolveAdvisorEntry, resolveSessionEnabled, splitModelSelector } from './config.js'
 export type { AdvisorEntryConfig, AdvisorsPluginConfig, ResolvedAdvisor, ResolvedConfig, RouteDefaults } from './config.js'
 export { loadRoster, nameSlug, ROSTER_FILENAMES } from './roster.js'
 export type { RosterFileResult } from './roster.js'

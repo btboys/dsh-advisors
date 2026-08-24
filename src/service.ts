@@ -17,7 +17,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { boundContextSummary, createUserMessage, type TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { Session, SessionEvent, SessionId } from '@deepseek-ai/dsh-session'
-import { normalizeConfig, resolveAdvisorEntry, type AdvisorsPluginConfig, type ResolvedAdvisor, type ResolvedConfig } from './config.js'
+import { normalizeConfig, resolveAdvisorEntry, resolveSessionEnabled, type AdvisorsPluginConfig, type ResolvedAdvisor, type ResolvedConfig } from './config.js'
 import { loadGuidance } from './guidance.js'
 import { loadRoster } from './roster.js'
 import { runReview, type AdvisorNote, type LlmStream } from './reviewer.js'
@@ -33,6 +33,16 @@ interface SessionStats {
   outputTokens: number
   lastError?: string
   lastReviewAt?: string
+}
+
+/** Wire shape of the session-level switch state (composer toolbar chip). */
+export interface SessionAdviseState {
+  /** Global `enabled` from the resolved config. */
+  globalEnabled: boolean
+  /** Session override; null = follows the global switch. */
+  override: boolean | null
+  /** What this session actually does: override ?? globalEnabled. */
+  effective: boolean
 }
 
 interface SessionState {
@@ -88,6 +98,8 @@ export class AdvisorService {
   private raw: AdvisorsPluginConfig
   private readonly log: Logger
   private readonly states = new Map<SessionId, SessionState>()
+  /** Session-level enable overrides from the composer chip; in-memory only. */
+  private readonly sessionOverrides = new Map<SessionId, boolean>()
 
   constructor(ctx: Context, config?: AdvisorsPluginConfig) {
     this.ctx = ctx
@@ -105,6 +117,7 @@ export class AdvisorService {
     ctx.effect(() => () => {
       for (const state of this.states.values()) state.controller?.abort()
       this.states.clear()
+      this.sessionOverrides.clear()
     }, 'advisors cleanup')
 
     this.log.info(
@@ -141,6 +154,38 @@ export class AdvisorService {
     return this.getRawConfig()
   }
 
+  /** Session-level switch state for the composer chip / RPC. */
+  getSessionAdvise(sessionId: SessionId): SessionAdviseState {
+    const override = this.sessionOverrides.get(sessionId) ?? null
+    return {
+      globalEnabled: this.config.enabled,
+      override,
+      effective: resolveSessionEnabled(this.config.enabled, override ?? undefined),
+    }
+  }
+
+  /**
+   * Set or clear (null) a session-level enable override. Stored even for
+   * sessions the service has not attached yet, so a chip toggle on a blank
+   * session still applies once its agent appears.
+   */
+  setSessionAdvise(sessionId: SessionId, enabled: boolean | null): SessionAdviseState {
+    if (enabled === null) this.sessionOverrides.delete(sessionId)
+    else this.sessionOverrides.set(sessionId, enabled)
+    const state = this.getSessionAdvise(sessionId)
+    this.log.info(
+      'session %s advise: override=%s, effective=%s',
+      sessionId,
+      state.override === null ? '(follow global)' : String(state.override),
+      state.effective,
+    )
+    return state
+  }
+
+  private isEnabledFor(sessionId: SessionId): boolean {
+    return resolveSessionEnabled(this.config.enabled, this.sessionOverrides.get(sessionId))
+  }
+
   private attach(agent: Agent): void {
     const session = agent.session
     if (this.states.has(session.id)) return
@@ -169,6 +214,7 @@ export class AdvisorService {
     const state = this.states.get(id)
     state?.controller?.abort()
     this.states.delete(id)
+    this.sessionOverrides.delete(id)
   }
 
   private onSessionEvent(agent: Agent, state: SessionState, event: SessionEvent): void {
@@ -178,7 +224,7 @@ export class AdvisorService {
     }
     if (event.type !== 'turn/end') return
     if (event.data.reason.kind !== 'completed') return
-    if (!this.config.enabled) return
+    if (!this.isEnabledFor(agent.session.id)) return
     debugLine(this.config.debugLog, 'trigger', { session: agent.session.id, turn: event.data.turn })
     const inflight = this.review(agent, state).catch((error) => {
       state.stats.lastError = error instanceof Error ? error.message : String(error)

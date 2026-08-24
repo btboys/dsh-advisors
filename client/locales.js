@@ -36,6 +36,13 @@ export const zh = {
   debugLogHint: 'JSONL 诊断文件；留空关闭。',
   rosterNote: '专家名册 advisors[] 仍通过 cordis.patch.yml 或 WATCHDOG.yml / ADVISORS.yml 配置。',
   inherit: '（沿用默认）',
+  'chip.label': '顾问',
+  'chip.on.aria': '本会话顾问审阅已开启，点击关闭',
+  'chip.off.aria': '本会话顾问审阅已关闭，点击开启',
+  'chip.on.title': '顾问审阅：本会话已开启 — 点击关闭',
+  'chip.off.title': '顾问审阅：本会话已关闭 — 点击开启',
+  'chip.on.overridden.title': '顾问审阅：本会话已开启（覆盖全局设置）— 点击关闭',
+  'chip.off.overridden.title': '顾问审阅：本会话已关闭（覆盖全局设置）— 点击开启',
 }
 
 export const en = {
@@ -76,4 +83,11 @@ export const en = {
   debugLogHint: 'JSONL diagnostics file; empty disables.',
   rosterNote: 'Specialist advisors[] rosters stay in cordis.patch.yml or WATCHDOG.yml / ADVISORS.yml.',
   inherit: '(inherit)',
+  'chip.label': 'Advisors',
+  'chip.on.aria': 'Advisor review on for this session, press to turn off',
+  'chip.off.aria': 'Advisor review off for this session, press to turn on',
+  'chip.on.title': 'Advisors: on for this session — click to turn off',
+  'chip.off.title': 'Advisors: off for this session — click to turn on',
+  'chip.on.overridden.title': 'Advisors: on for this session (overrides the global switch) — click to turn off',
+  'chip.off.overridden.title': 'Advisors: off for this session (overrides the global switch) — click to turn on',
 }

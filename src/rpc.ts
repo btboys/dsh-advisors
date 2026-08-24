@@ -14,6 +14,8 @@ export const ADVISORS_RPC_CHANNEL = '/dsh-advisors'
 export const ADVISORS_ENDPOINTS = Object.freeze({
   configGet: 'advisors.config.get',
   configSet: 'advisors.config.set',
+  sessionGet: 'advisors.session.get',
+  sessionSet: 'advisors.session.set',
 })
 
 function ok(value: unknown): { ok: true; value: unknown } {
@@ -34,6 +36,10 @@ function fail(message: string): {
 export interface AdvisorsRpcBridge {
   read(): AdvisorsPluginConfig
   write(partial: unknown): AdvisorsPluginConfig
+  /** Session-level switch state for the composer chip. */
+  readSession(sessionId: string): unknown
+  /** Set (boolean) or clear (null) a session-level enable override. */
+  writeSession(sessionId: string, enabled: boolean | null): unknown
 }
 
 type RpcHandle = {
@@ -70,6 +76,17 @@ export function installAdvisorsRpc(
           return fail('advisors.config.set expects an object payload')
         }
         return ok(bridge.write(payload))
+      }
+      if (endpoint === ADVISORS_ENDPOINTS.sessionGet || endpoint === ADVISORS_ENDPOINTS.sessionSet) {
+        const body = payload as { sessionId?: unknown; enabled?: unknown } | undefined
+        const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.trim() : ''
+        if (!sessionId) return fail(`${endpoint} expects a non-empty sessionId`)
+        if (endpoint === ADVISORS_ENDPOINTS.sessionGet) return ok(bridge.readSession(sessionId))
+        const enabled = body?.enabled
+        if (enabled !== null && typeof enabled !== 'boolean') {
+          return fail('advisors.session.set expects enabled to be a boolean or null (null = follow global)')
+        }
+        return ok(bridge.writeSession(sessionId, enabled))
       }
       return fail(`unknown advisors endpoint: ${String(endpoint)}`)
     },
