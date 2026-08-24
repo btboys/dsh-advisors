@@ -2,6 +2,14 @@
 
 DeepSeek Harness（dsh）的 **advisor 插件**：一个独立的后台审阅模型观察主 agent 的每一轮工作，把按严重级别分类的审阅意见注入会话，让主 agent 在代价变大之前纠正方向。
 
+## 展示效果
+
+审阅意见以「上下文注入」消息的形式出现在对话流中——没有独立面板，有意见时才出现，审阅结论正常时完全静默：
+
+![Advisor 审阅意见（concern）在 Web GUI 中的展示效果](docs/advisor-note.png)
+
+上图中 advisor 发现一处「类型签名与运行行为不符」的缺陷并给出 `concern` 级意见，主 agent 随后采纳修正。`nit` 级意见则以旁注形式注入，不打断当前工作。
+
 ## 工作原理
 
 ```
@@ -71,11 +79,11 @@ Web 端可在 **设置 → 顾问** 里改常用开关与路由（保存后写�
     # 每次审阅喂给 advisor 的 transcript 字符上限（默认 12000）
     maxTranscriptChars: 12000
 
-    # 调查工具轮数上限（默认 3；0 = 只看 transcript）
-    toolRounds: 3
+    # 调查工具轮数上限（默认 2；0 = 只看 transcript）
+    toolRounds: 2
 
-    # advisor 单次请求的输出 token 上限（默认 2048）
-    reviewMaxTokens: 2048
+    # advisor 单次请求的输出 token 上限（默认 4096）
+    reviewMaxTokens: 4096
 
     # 诊断日志文件（JSONL，记录 trigger/verdict/deliver/error）；默认关闭
     debugLog: ''

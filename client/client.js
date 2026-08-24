@@ -86,8 +86,8 @@ var DEFAULTS = {
   guidance: true,
   immuneTurns: 3,
   maxTranscriptChars: 12e3,
-  toolRounds: 3,
-  reviewMaxTokens: 2048,
+  toolRounds: 2,
+  reviewMaxTokens: 4096,
   debugLog: "",
   awaitReviewOnFlush: false,
   roster: true
@@ -247,7 +247,7 @@ function AdvisorsSettings({ rpcCall, loadModelCatalog, t }) {
         immuneTurns: Number(draft.immuneTurns) || 0,
         maxTranscriptChars: Number(draft.maxTranscriptChars) || 12e3,
         toolRounds: Number(draft.toolRounds) || 0,
-        reviewMaxTokens: Number(draft.reviewMaxTokens) || 2048
+        reviewMaxTokens: Number(draft.reviewMaxTokens) || 4096
       };
       const result = await rpcCall(ADVISORS_RPC_CHANNEL, ADVISORS_ENDPOINTS.configSet, payload);
       if (!result.ok) {
@@ -342,8 +342,8 @@ function AdvisorsSettings({ rpcCall, loadModelCatalog, t }) {
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleRow, { t, id: "dsha-flush", labelKey: "awaitReviewOnFlush", hintKey: "awaitReviewOnFlushHint", checked: !!draft.awaitReviewOnFlush, disabled, onChange: (v) => setField("awaitReviewOnFlush", v) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-immune", labelKey: "immuneTurns", hintKey: "immuneTurnsHint", type: "number", value: String(draft.immuneTurns ?? 3), disabled, onChange: (v) => setField("immuneTurns", v) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-chars", labelKey: "maxTranscriptChars", hintKey: "maxTranscriptCharsHint", type: "number", value: String(draft.maxTranscriptChars ?? 12e3), disabled, onChange: (v) => setField("maxTranscriptChars", v) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-rounds", labelKey: "toolRounds", hintKey: "toolRoundsHint", type: "number", value: String(draft.toolRounds ?? 3), disabled, onChange: (v) => setField("toolRounds", v) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-tokens", labelKey: "reviewMaxTokens", hintKey: "reviewMaxTokensHint", type: "number", value: String(draft.reviewMaxTokens ?? 2048), disabled, onChange: (v) => setField("reviewMaxTokens", v) }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-rounds", labelKey: "toolRounds", hintKey: "toolRoundsHint", type: "number", value: String(draft.toolRounds ?? 2), disabled, onChange: (v) => setField("toolRounds", v) }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-tokens", labelKey: "reviewMaxTokens", hintKey: "reviewMaxTokensHint", type: "number", value: String(draft.reviewMaxTokens ?? 4096), disabled, onChange: (v) => setField("reviewMaxTokens", v) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextRow, { t, id: "dsha-debug", labelKey: "debugLog", hintKey: "debugLogHint", value: draft.debugLog || "", disabled, onChange: (v) => setField("debugLog", v) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "dsha-note", children: t("rosterNote") }),

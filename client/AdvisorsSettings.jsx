@@ -50,8 +50,8 @@ const DEFAULTS = {
   guidance: true,
   immuneTurns: 3,
   maxTranscriptChars: 12000,
-  toolRounds: 3,
-  reviewMaxTokens: 2048,
+  toolRounds: 2,
+  reviewMaxTokens: 4096,
   debugLog: '',
   awaitReviewOnFlush: false,
   roster: true,
@@ -225,7 +225,7 @@ export function AdvisorsSettings({ rpcCall, loadModelCatalog, t }) {
         immuneTurns: Number(draft.immuneTurns) || 0,
         maxTranscriptChars: Number(draft.maxTranscriptChars) || 12000,
         toolRounds: Number(draft.toolRounds) || 0,
-        reviewMaxTokens: Number(draft.reviewMaxTokens) || 2048,
+        reviewMaxTokens: Number(draft.reviewMaxTokens) || 4096,
       }
       const result = await rpcCall(ADVISORS_RPC_CHANNEL, ADVISORS_ENDPOINTS.configSet, payload)
       if (!result.ok) {
@@ -304,8 +304,8 @@ export function AdvisorsSettings({ rpcCall, loadModelCatalog, t }) {
         <ToggleRow t={t} id="dsha-flush" labelKey="awaitReviewOnFlush" hintKey="awaitReviewOnFlushHint" checked={!!draft.awaitReviewOnFlush} disabled={disabled} onChange={(v) => setField('awaitReviewOnFlush', v)} />
         <TextRow t={t} id="dsha-immune" labelKey="immuneTurns" hintKey="immuneTurnsHint" type="number" value={String(draft.immuneTurns ?? 3)} disabled={disabled} onChange={(v) => setField('immuneTurns', v)} />
         <TextRow t={t} id="dsha-chars" labelKey="maxTranscriptChars" hintKey="maxTranscriptCharsHint" type="number" value={String(draft.maxTranscriptChars ?? 12000)} disabled={disabled} onChange={(v) => setField('maxTranscriptChars', v)} />
-        <TextRow t={t} id="dsha-rounds" labelKey="toolRounds" hintKey="toolRoundsHint" type="number" value={String(draft.toolRounds ?? 3)} disabled={disabled} onChange={(v) => setField('toolRounds', v)} />
-        <TextRow t={t} id="dsha-tokens" labelKey="reviewMaxTokens" hintKey="reviewMaxTokensHint" type="number" value={String(draft.reviewMaxTokens ?? 2048)} disabled={disabled} onChange={(v) => setField('reviewMaxTokens', v)} />
+        <TextRow t={t} id="dsha-rounds" labelKey="toolRounds" hintKey="toolRoundsHint" type="number" value={String(draft.toolRounds ?? 2)} disabled={disabled} onChange={(v) => setField('toolRounds', v)} />
+        <TextRow t={t} id="dsha-tokens" labelKey="reviewMaxTokens" hintKey="reviewMaxTokensHint" type="number" value={String(draft.reviewMaxTokens ?? 4096)} disabled={disabled} onChange={(v) => setField('reviewMaxTokens', v)} />
         <TextRow t={t} id="dsha-debug" labelKey="debugLog" hintKey="debugLogHint" value={draft.debugLog || ''} disabled={disabled} onChange={(v) => setField('debugLog', v)} />
       </div>
 

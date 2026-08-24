@@ -57,9 +57,12 @@ export interface AdvisorsPluginConfig {
   immuneTurns?: number
   /** Transcript size cap fed to the advisor per review. Default 12000. */
   maxTranscriptChars?: number
-  /** Maximum investigative tool rounds per advisor review. Default 3. */
+  /** Maximum investigative tool rounds per advisor review. Default 2. */
   toolRounds?: number
-  /** Output token cap per advisor request. Default 2048. */
+  /**
+   * Output token cap per advisor request. Default 4096 — enough headroom for
+   * the model to write its verdict JSON after spending tokens on tool calls.
+   */
   reviewMaxTokens?: number
   /**
    * Diagnostic log file path. When set, review lifecycle events (trigger,
@@ -189,8 +192,8 @@ export function normalizeConfig(raw: AdvisorsPluginConfig | undefined, warn?: (m
     rosterFiles: config.roster !== false,
     immuneTurns: Math.max(0, config.immuneTurns ?? 3),
     maxTranscriptChars: Math.max(2000, config.maxTranscriptChars ?? 12000),
-    toolRounds: Math.max(0, config.toolRounds ?? 3),
-    reviewMaxTokens: Math.max(256, config.reviewMaxTokens ?? 2048),
+    toolRounds: Math.max(0, config.toolRounds ?? 2),
+    reviewMaxTokens: Math.max(256, config.reviewMaxTokens ?? 4096),
     debugLog: clean(config.debugLog),
     awaitReviewOnFlush: config.awaitReviewOnFlush === true,
     routeDefaults,

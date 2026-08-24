@@ -26,8 +26,9 @@
         immuneTurns: 3
         maxTranscriptChars: 12000
         # Investigative tool rounds per review (read/grep/glob, read-only).
-        toolRounds: 3
-        reviewMaxTokens: 2048
+        toolRounds: 2
+        # 输出 token 上限；留出余量让模型在工具调用后仍能写出结论 JSON。
+        reviewMaxTokens: 4096
         # 诊断日志文件（JSONL）；排查用，默认关闭。
         debugLog: ''
         # 短生命周期（headless）profile 建议开启：退出前的 flush 会等待
