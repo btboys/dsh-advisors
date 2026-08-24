@@ -83,14 +83,17 @@ function debugLine(path: string | undefined, event: string, data: Record<string,
 
 export class AdvisorService {
   private readonly ctx: Context
-  private readonly config: ResolvedConfig
+  private config: ResolvedConfig
+  /** Last raw plugin config (patch + persisted + UI writes). */
+  private raw: AdvisorsPluginConfig
   private readonly log: Logger
   private readonly states = new Map<SessionId, SessionState>()
 
   constructor(ctx: Context, config?: AdvisorsPluginConfig) {
     this.ctx = ctx
     this.log = loggerOf(ctx)
-    this.config = normalizeConfig(config, (message) => this.log.warn(message))
+    this.raw = { ...(config ?? {}) }
+    this.config = normalizeConfig(this.raw, (message) => this.log.warn(message))
 
     // Attach to agents created from now on, and to agents already live (the
     // plugin may hot-reload into a running profile).
@@ -105,7 +108,8 @@ export class AdvisorService {
     }, 'advisors cleanup')
 
     this.log.info(
-      'ready: roster=%s, guidance=%s',
+      'ready: enabled=%s, roster=%s, guidance=%s',
+      this.config.enabled,
       this.config.advisors.length > 0
         ? `${this.config.advisors.length} configured`
         : this.config.rosterFiles
@@ -113,6 +117,28 @@ export class AdvisorService {
           : 'default',
       this.config.guidance ? 'on' : 'off',
     )
+  }
+
+  /** Current raw config for the settings page / RPC. */
+  getRawConfig(): AdvisorsPluginConfig {
+    return { ...this.raw }
+  }
+
+  /**
+   * Apply a partial config from the Web settings page or the settings
+   * namespace. Nested `advisors[]` from the loader patch is preserved unless
+   * the patch explicitly replaces it.
+   */
+  applyConfig(partial: AdvisorsPluginConfig): AdvisorsPluginConfig {
+    this.raw = { ...this.raw, ...partial }
+    this.config = normalizeConfig(this.raw, (message) => this.log.warn(message))
+    this.log.info(
+      'config updated: enabled=%s, model=%s, immuneTurns=%s',
+      this.config.enabled,
+      this.config.routeDefaults.model ?? '(inherit)',
+      this.config.immuneTurns,
+    )
+    return this.getRawConfig()
   }
 
   private attach(agent: Agent): void {

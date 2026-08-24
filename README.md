@@ -44,7 +44,9 @@ dsh plugin --profile headless add dsh-advisors  # headless
 
 ## 配置
 
-全部通过配置文件控制（`~/.dsh/profiles/<profile>/cordis.patch.yml` 中按 `id: advisors` 覆盖，或 `$DSH_HOME/cordis.patch.yml` 全局覆盖）。**没有 slash command**——开关就是 `enabled` 或整条 `disabled: true`。
+Web 端可在 **设置 → 顾问** 里改常用开关与路由（保存后写入 `~/.dsh/advisors/config.json`，热更新，无需重启）。专家名册 `advisors[]` 仍走配置文件 / 名册文件。
+
+也可以继续用配置文件控制（`~/.dsh/profiles/<profile>/cordis.patch.yml` 中按 `id: advisors` 覆盖，或 `$DSH_HOME/cordis.patch.yml` 全局覆盖）。**没有 slash command**——开关就是 `enabled` 或整条 `disabled: true`。
 
 ```yaml
 - id: advisors
