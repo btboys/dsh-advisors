@@ -1,0 +1,49 @@
+# dsh-advisors bundle patch layer.
+#
+# Declared by the `dsh.bundle.patch` key in package.json; `dsh plugin add`
+# activates this package as a bundle layer automatically.
+#
+# The advisor reviews every completed main-agent turn with a background model
+# and injects severity-graded notes (nit / concern / blocker) into the session.
+#
+# Master switch: set `enabled: false` below (or disable this entry by id in
+# your profile patch). Route: leave provider/model empty to review with the
+# same model the main agent uses, or pin a cheaper/stronger reviewer.
+- insert:
+    - id: advisors
+      name: 'dsh-advisors'
+      config:
+        enabled: true
+        # Default reviewer route. Empty = inherit the reviewed agent's route.
+        provider: ''
+        model: ''
+        reasoningEffort: ''
+        # Shared guidance added to every advisor's system prompt.
+        instructions: ''
+        # Load ADVISORS.md files (user-level + workspace ancestors).
+        guidance: true
+        # Turns after an interrupt where further concerns/blockers become asides.
+        immuneTurns: 3
+        maxTranscriptChars: 12000
+        # Investigative tool rounds per review (read/grep/glob, read-only).
+        toolRounds: 3
+        reviewMaxTokens: 2048
+        # 诊断日志文件（JSONL）；排查用，默认关闭。
+        debugLog: ''
+        # 短生命周期（headless）profile 建议开启：退出前的 flush 会等待
+        # 在途审阅完成（上限 30s），让最终审阅意见落入会话日志。
+        # 长运行 profile 保持 false，避免每个请求步的 flush 等待审阅。
+        awaitReviewOnFlush: false
+        # 是否发现名册文件（WATCHDOG.yml/.yaml、ADVISORS.yml/.yaml）。
+        # 仅当上面的 advisors 为空时生效；名册文件一旦有条目即取代默认 advisor。
+        roster: true
+        # Specialist roster; empty = roster files / one default advisor. Example:
+        # advisors:
+        #   - name: Security
+        #     model: 'anthropic/claude-sonnet-4-5'
+        #     instructions: 'Focus on injection, secrets, and unsafe file writes.'
+        #     tools: [read, grep, glob]
+        #   - name: Style
+        #     enabled: false
+        #     tools: []
+        advisors: []

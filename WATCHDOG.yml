@@ -1,0 +1,11 @@
+# dsh-advisors 项目的审阅者名册（本插件 dogfooding 自己）。
+instructions: |
+  本仓库是 dsh 的 advisor 插件源码。审阅重点：
+  - 审阅回路必须防自激：advisor 意见触发的 turn 不得再次触发审阅。
+  - 注入主会话的消息必须带 source.plugin 署名。
+  - 只读工具不得逃逸工作区根目录。
+advisors:
+  - name: Watchdog
+    instructions: |
+      关注会话事件处理逻辑与竞态（review 重入、免疫窗口、去重）。
+    tools: [read, grep, glob]
