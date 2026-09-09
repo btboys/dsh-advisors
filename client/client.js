@@ -528,7 +528,7 @@ var en = {
 // client/index.jsx
 var NS = "settings.advisors";
 var name = "dsh-advisors";
-var inject = ["slots", "connection", "locale"];
+var inject = ["slots", "connection", "locale", "remote", "remote.session"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "advisors: settings dictionaries");
   const t = ctx.locale.bind(NS);
@@ -539,9 +539,9 @@ function apply(ctx) {
       error: result && !result.ok ? result.error : void 0
     }));
   };
-  const loadModelCatalog = () => ctx.connection.api.llm.models({}).then((r) => {
-    if (!r.result.ok) throw new Error(r.result.error.message);
-    return r.result.value;
+  const loadModelCatalog = () => ctx.remote.session.modelCatalog().then((r) => {
+    if (!r.ok) throw new Error(`${r.error.code}: ${r.error.message}`);
+    return r.value;
   });
   ctx.slots.inject("settings.section", () => ctx.slots.register({
     name: "settings.section",

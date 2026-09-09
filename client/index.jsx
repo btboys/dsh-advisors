@@ -10,7 +10,7 @@ import { en, zh } from './locales.js'
 const NS = 'settings.advisors'
 
 export const name = 'dsh-advisors'
-export const inject = ['slots', 'connection', 'locale']
+export const inject = ['slots', 'connection', 'locale', 'remote', 'remote.session']
 
 export function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'advisors: settings dictionaries')
@@ -24,10 +24,10 @@ export function apply(ctx) {
     }))
   }
 
-  // llm.models is host-scoped — no session needed.
-  const loadModelCatalog = () => ctx.connection.api.llm.models({}).then((r) => {
-    if (!r.result.ok) throw new Error(r.result.error.message)
-    return r.result.value
+  // remote.session.modelCatalog is host-scoped — no session needed.
+  const loadModelCatalog = () => ctx.remote.session.modelCatalog().then((r) => {
+    if (!r.ok) throw new Error(`${r.error.code}: ${r.error.message}`)
+    return r.value
   })
 
   ctx.slots.inject('settings.section', () => ctx.slots.register({
