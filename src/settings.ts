@@ -8,12 +8,17 @@
  * `ctx.settings.describe()` and lets future settingsScope cards share state.
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
+// Type-only: loads the `Context.settings` augmentation (peer dep is optional).
+import type {} from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 import type { AdvisorsPluginConfig } from './config.js'
 
-/** Settings namespace owned by this plugin. */
-export const ADVISORS_SETTINGS_NAMESPACE = settingsNamespace('advisors')
+/**
+ * Settings namespace owned by this plugin. dsh-settings ≥ 0.1.2 dropped the
+ * `settingsNamespace()` helper — a lowercase-hyphenated literal is validated
+ * by `SettingsProvider.installSection` (type- and runtime-level).
+ */
+export const ADVISORS_SETTINGS_NAMESPACE = 'advisors'
 
 /**
  * Flat section the Web UI edits. Nested `advisors[]` roster stays in YAML /
@@ -99,19 +104,28 @@ export interface AdvisorsSettingsHooks {
 /**
  * Register the advisors settings namespace when possible.
  * Soft-depends on `settings` so headless profiles without a settings provider
- * still boot — `installSettingsSection` waits for the service via `ctx.inject`.
+ * still boot — `ctx.inject` waits for the service, and `installSection` falls
+ * back to the composition entry if the provider later detaches.
+ *
+ * dsh-settings ≥ 0.1.2: `installSettingsSection` moved onto the provider as
+ * `ctx.settings.installSection(owner, ns, schema, entry, hooks)`. The
+ * `setSource` thunk is the authoritative read path — `onChange` re-reads it
+ * instead of poking `ctx.settings.get` through a cast.
  */
 export function installAdvisorsSettings(
   ctx: Context,
   entry: AdvisorsSettings,
   hooks: AdvisorsSettingsHooks,
 ): void {
-  installSettingsSection(ctx, ADVISORS_SETTINGS_NAMESPACE, ADVISORS_SETTINGS_SCHEMA, entry, {
-    setSource: () => {},
-    onChange: () => {
-      const settings = (ctx as unknown as { settings?: { get: (ns: string) => AdvisorsSettings | undefined } }).settings
-      const current = settings?.get(ADVISORS_SETTINGS_NAMESPACE)
-      if (current) hooks.apply(settingsToConfig(current))
-    },
+  let source: () => AdvisorsSettings = () => entry
+  ctx.inject(['settings'], (settingsCtx) => {
+    settingsCtx.settings.installSection(ctx, ADVISORS_SETTINGS_NAMESPACE, ADVISORS_SETTINGS_SCHEMA, entry, {
+      setSource: (current) => {
+        source = current
+      },
+      onChange: () => {
+        hooks.apply(settingsToConfig(source()))
+      },
+    })
   })
 }

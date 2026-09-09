@@ -21,7 +21,7 @@ export const name = 'advisors'
  * Host services required before activation.
  * `connection` (+ optional `webServer`) power the settings-page RPC channel;
  * `llm` / `agents` power reviews. `settings` is soft-injected via
- * installSettingsSection and is not required to boot.
+ * ctx.inject in installAdvisorsSettings and is not required to boot.
  */
 export const inject = ['llm', 'agents', 'connection']
 

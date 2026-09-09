@@ -1,2 +1,15 @@
 allowBuilds:
   esbuild: true
+
+# dsh-settings 0.1.2-rc.1 declares caret ranges on sibling 0.1.2-rc.1 packages,
+# but npm only carries that line on the `next` dist-tag (latest is 0.0.1-rc.1),
+# so the ranges fail to resolve. Pin the family explicitly. dsh-session /
+# dsh-agent / dsh-llm stay on 0.1.0-rc.8 devDeps — dsh-settings only needs its
+# peer for typing, so tolerate the version skew instead of pulling the whole
+# 0.1.2 tree.
+overrides:
+  '@deepseek-ai/dsh-brand': 0.1.2-rc.1
+  '@deepseek-ai/dsh-invariants': 0.1.2-rc.1
+  '@deepseek-ai/dsh-util-values': 0.1.2-rc.1
+
+strictPeerDependencies: false
