@@ -19,31 +19,20 @@ export const name = 'advisors'
 
 /**
  * Host services required before activation.
- * `connection` (+ optional `webServer`) power the settings-page RPC channel;
- * `llm` / `agents` power reviews. `settings` is soft-injected via
- * ctx.inject in installAdvisorsSettings and is not required to boot.
+ * `llm` / `agents` power reviews. `connection` + `webServer` power the
+ * settings-page RPC channel and are soft-injected via ctx.inject in
+ * installAdvisorsRpc (dsh-client-connection 0.1.5 no longer provides
+ * `rpc.handle` to callers — see src/rpc.ts), so neither is required to boot.
+ * `settings` is likewise soft-injected in installAdvisorsSettings.
  */
-export const inject = ['llm', 'agents', 'connection']
-
-/** Soft-read a host service Cordis may not have declared on this fiber. */
-function serviceOf(ctx: Context, key: string): unknown {
-  try {
-    return (ctx as unknown as { get: (name: string) => unknown }).get(key)
-  } catch {
-    return undefined
-  }
-}
+export const inject = ['llm', 'agents']
 
 export function apply(ctx: Context, config?: AdvisorsPluginConfig): AdvisorService {
   const effective = mergePersisted(config, loadPersistedConfig())
   const service = new AdvisorService(ctx, effective)
 
-  const connection = serviceOf(ctx, 'connection') as
-    | { rpc?: { handle: (...args: never[]) => unknown } }
-    | undefined
-
   installAdvisorsRpc(
-    connection?.rpc as Parameters<typeof installAdvisorsRpc>[0],
+    ctx,
     {
       read: () => service.getRawConfig(),
       write: (partial) => {
