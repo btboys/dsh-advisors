@@ -376,9 +376,8 @@ function ensureCss2() {
   tag.textContent = CSS2;
   document.head.appendChild(tag);
 }
-function AdvisorsToggle({ session, rpcCall, t }) {
+function AdvisorsToggle({ sessionId, rpcCall, t }) {
   ensureCss2();
-  const sessionId = session?.sessionId;
   const [state, setState] = (0, import_react2.useState)(null);
   const [busy, setBusy] = (0, import_react2.useState)(false);
   const aliveRef = (0, import_react2.useRef)(true);

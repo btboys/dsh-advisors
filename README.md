@@ -41,6 +41,8 @@ DeepSeek Harness（dsh）的 **advisor 插件**：一个独立的后台审阅模
 
 ## 安装
 
+> **版本要求：dsh ≥ 0.2.0。** 本插件的 0.2.0 起跟随 harness 0.2.0 的宿主 API（自有 message source kind、增量 `session/event` 读取、`SettingsForms`），peer 预检会拒绝安装在 0.1.x profile 上；如需旧版请用 0.1.7。
+
 已发布到 npm（[`dsh-advisors`](https://www.npmjs.com/package/dsh-advisors)），用 `dsh plugin` 安装到目标 profile：
 
 ```bash

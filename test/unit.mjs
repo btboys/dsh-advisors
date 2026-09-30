@@ -62,7 +62,7 @@ assert.deepEqual(parseNotes('I found nothing wrong.'), [])
 const ev = (type, data) => ({ type, seq: 0, time: 0, data })
 const slice = [
   ev('user/message', { content: [{ type: 'text', text: 'fix the bug' }], source: { kind: 'user' } }),
-  ev('user/message', { content: [{ type: 'text', text: 'advisor note' }], source: { kind: 'plugin', plugin: 'dsh-advisors' } }),
+  ev('user/message', { content: [{ type: 'text', text: 'advisor note' }], source: { kind: 'dsh-advisors' } }),
   ev('assistant/message', { turn: 1, step: 1, message: { content: [{ type: 'text', text: 'done' }] } }),
   ev('tool/call', { turn: 1, step: 1, callId: 'c1', name: 'edit', arguments: '{"file":"a.ts"}' }),
   ev('tool/result', { turn: 1, step: 1, message: { content: [{ type: 'text', text: 'ok' }] } }),
@@ -70,7 +70,7 @@ const slice = [
 assert.equal(slice.filter(isGenuineUserMessage).length, 1)
 const transcript = buildTranscript(slice, 12000)
 assert.match(transcript, /## User\nfix the bug/)
-assert.match(transcript, /## Injected context \(plugin: dsh-advisors\)/)
+assert.match(transcript, /## Injected context \(dsh-advisors\)/)
 assert.match(transcript, /## Assistant\ndone/)
 assert.match(transcript, /### Tool call: edit/)
 assert.match(transcript, /### Tool result\nok/)

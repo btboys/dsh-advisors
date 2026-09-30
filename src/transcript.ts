@@ -39,20 +39,21 @@ export function buildTranscript(events: readonly SessionEvent[], maxChars: numbe
   for (const event of events) {
     switch (event.type) {
       case 'user/message': {
-        const data = event.data as { content?: ContentBlock[]; source?: { kind?: string; plugin?: string } }
+        const data = event.data as unknown as { content?: readonly ContentBlock[]; source?: { kind?: string } }
         const text = textOf(data.content)
         if (!text) break
         if (data.source?.kind === 'user') {
           lines.push(`## User\n${truncate(text, 4000)}`)
-        } else if (data.source?.kind === 'plugin') {
+        } else {
           // Keep injected context visible but compact — it explains WHY the
-          // agent changed direction (including earlier advisor notes).
-          lines.push(`## Injected context (plugin: ${data.source.plugin ?? 'unknown'})\n${truncate(text, 800)}`)
+          // agent changed direction (including earlier advisor notes). 0.2.0
+          // sources carry one producer-specific `kind` instead of `plugin`.
+          lines.push(`## Injected context (${data.source?.kind ?? 'unknown'})\n${truncate(text, 800)}`)
         }
         break
       }
       case 'assistant/message': {
-        const data = event.data as { message?: { content?: ContentBlock[] }; interrupted?: boolean }
+        const data = event.data as unknown as { message?: { content?: readonly ContentBlock[] }; interrupted?: boolean }
         const text = textOf(data.message?.content)
         if (!text) break
         lines.push(`## Assistant${data.interrupted ? ' (interrupted)' : ''}\n${truncate(text, 4000)}`)
@@ -64,7 +65,7 @@ export function buildTranscript(events: readonly SessionEvent[], maxChars: numbe
         break
       }
       case 'tool/result': {
-        const data = event.data as { message?: { content?: ContentBlock[] }; error?: { name: string; code: string } }
+        const data = event.data as unknown as { message?: { content?: readonly ContentBlock[] }; error?: { name: string; code: string } }
         const text = textOf(data.message?.content)
         const prefix = data.error ? `### Tool result (ERROR ${data.error.code})` : '### Tool result'
         if (text) lines.push(`${prefix}\n${truncate(text, 600)}`)

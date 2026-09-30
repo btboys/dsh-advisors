@@ -16,6 +16,7 @@ import {
 import type { ResolvedAdvisor } from './config.js'
 import { ADVISOR_TOOL_SCHEMAS, executeAdvisorTool } from './tools.js'
 import { textOf } from './transcript.js'
+import { ADVISORS_SOURCE_KIND } from './source.js'
 
 export type NoteSeverity = 'nit' | 'concern' | 'blocker'
 
@@ -133,7 +134,7 @@ export async function runReview(params: ReviewParams): Promise<ReviewOutcome> {
       content: [
         { type: 'text', text: `Transcript of the main agent's recent activity:\n\n${params.transcript}` },
       ],
-      source: { kind: 'plugin', plugin: 'dsh-advisors' },
+      source: { kind: ADVISORS_SOURCE_KIND },
     }),
   ]
 
@@ -167,7 +168,8 @@ export async function runReview(params: ReviewParams): Promise<ReviewOutcome> {
 
     if (finish.kind === 'tool-calls' && toolCalls.length > 0 && rounds < params.toolRounds && schemas.length > 0) {
       rounds++
-      messages.push(assembler.message({ kind: 'model', provider: route.provider, model: route.model }))
+      // 0.2.0: BlockAssembler.message() takes the source WITHOUT its `kind` tag.
+      messages.push(assembler.message({ provider: route.provider, model: route.model }))
       for (const call of toolCalls) {
         let text: string
         let isError = false

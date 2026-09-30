@@ -22,8 +22,12 @@ import { loadGuidance } from './guidance.js'
 import { loadRoster } from './roster.js'
 import { runReview, type AdvisorNote, type LlmStream } from './reviewer.js'
 import { buildTranscript, isGenuineUserMessage } from './transcript.js'
+import { ADVISORS_SOURCE_KIND } from './source.js'
 
 const MAX_FINGERPRINTS = 50
+
+/** Safety cap on the incremental unreviewed-event buffer (a turn's review clears it). */
+const MAX_PENDING_EVENTS = 500
 
 interface SessionStats {
   reviews: number
@@ -46,7 +50,12 @@ export interface SessionAdviseState {
 }
 
 interface SessionState {
-  lastReviewedSeq: number
+  /**
+   * Events appended since the last review pass. dsh 0.2.0 removed the
+   * synchronous `session.events` history reader, so the plugin now keeps the
+   * unreviewed range incrementally from the `session/event` feed.
+   */
+  pending: SessionEvent[]
   currentTurn: number
   immuneUntilTurn: number
   fingerprints: string[]
@@ -109,7 +118,13 @@ export class AdvisorService {
 
     // Attach to agents created from now on, and to agents already live (the
     // plugin may hot-reload into a running profile).
-    ctx.on('agent/created', ({ agent }) => this.attach(agent))
+    // `agent/created` is a serial listener: cordis types it as returning
+    // `undefined | Promise<undefined>`, so the handler must not fall through
+    // with a bare `void` return.
+    ctx.on('agent/created', ({ agent }) => {
+      this.attach(agent)
+      return undefined
+    })
     ctx.on('agent/disposed', ({ agent }) => this.detach(agent.id))
     ctx.on('session/flush', (session) => this.onFlush(session))
     for (const agent of ctx.agents.list()) this.attach(agent)
@@ -194,7 +209,7 @@ export class AdvisorService {
     const state: SessionState = {
       // Only turns that complete after the plugin attaches are reviewed;
       // historical log content stays unreviewed on hot reload.
-      lastReviewedSeq: session.seq,
+      pending: [],
       currentTurn: 0,
       immuneUntilTurn: -1,
       fingerprints: [],
@@ -218,13 +233,22 @@ export class AdvisorService {
   }
 
   private onSessionEvent(agent: Agent, state: SessionState, event: SessionEvent): void {
-    if (event.type === 'turn/start') {
-      state.currentTurn = event.data.turn
+    if (event.type === 'turn/start') state.currentTurn = event.data.turn
+
+    // Switch off: keep nothing buffered. 0.2.0 offers no synchronous session
+    // history to catch up from, so a session left disabled must not accumulate
+    // events it will never review.
+    if (!this.isEnabledFor(agent.session.id)) {
+      state.pending.length = 0
       return
+    }
+
+    state.pending.push(event)
+    if (state.pending.length > MAX_PENDING_EVENTS) {
+      state.pending.splice(0, state.pending.length - MAX_PENDING_EVENTS)
     }
     if (event.type !== 'turn/end') return
     if (event.data.reason.kind !== 'completed') return
-    if (!this.isEnabledFor(agent.session.id)) return
     debugLine(this.config.debugLog, 'trigger', { session: agent.session.id, turn: event.data.turn })
     const inflight = this.review(agent, state).catch((error) => {
       state.stats.lastError = error instanceof Error ? error.message : String(error)
@@ -279,9 +303,8 @@ export class AdvisorService {
 
   private async reviewOnce(agent: Agent, state: SessionState, signal: AbortSignal): Promise<void> {
     const session = agent.session
-    const fromSeq = state.lastReviewedSeq
-    const slice: SessionEvent[] = session.events.slice(fromSeq)
-    state.lastReviewedSeq = session.seq
+    const slice = state.pending
+    state.pending = []
 
     // Loop prevention: only review ranges containing a genuine human prompt.
     // Turns started by our own steered notes carry plugin-sourced user
@@ -405,8 +428,7 @@ export class AdvisorService {
     const message = createUserMessage({
       content: [{ type: 'text', text }],
       source: {
-        kind: 'plugin',
-        plugin: 'dsh-advisors',
+        kind: ADVISORS_SOURCE_KIND,
         form: 'notice',
         summary: boundContextSummary(`advisor ${note.severity}: ${note.note}`),
       },

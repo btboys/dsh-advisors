@@ -1,11 +1,12 @@
 /**
- * Settings namespace for dsh-advisors.
+ * Settings page/section policy for dsh-advisors.
  *
- * Registered on the host plane so the Web settings page (and any other
- * settings consumers) can read/write the same section the loader patch seeds
- * as the composition `base` layer. The browser UI currently talks over the
- * `/dsh-advisors` RPC channel; this registration keeps the section visible to
- * `ctx.settings.describe()` and lets future settingsScope cards share state.
+ * dsh-settings ≥ 0.2.0 derives settings forms from each Loader entry's own
+ * `Config` schema (`SettingsForms.describe/update/replace/mutate`); the old
+ * `SettingsProvider.installSection` namespace registration no longer exists.
+ * This plugin ships its own Web page over the `/dsh-advisors` RPC channel, so
+ * it only registers that page policy (`auto: false`) and keeps the rest of the
+ * config surface in YAML / roster files.
  */
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only: loads the `Context.settings` augmentation (peer dep is optional).
@@ -14,9 +15,9 @@ import z from '@deepseek-ai/schemastery'
 import type { AdvisorsPluginConfig } from './config.js'
 
 /**
- * Settings namespace owned by this plugin. dsh-settings ≥ 0.1.2 dropped the
- * `settingsNamespace()` helper — a lowercase-hyphenated literal is validated
- * by `SettingsProvider.installSection` (type- and runtime-level).
+ * Namespace literal kept for the profile entry id (`- id: advisors` in
+ * cordis.patch.yml) and for the RPC/exports surface. dsh-settings ≥ 0.2.0
+ * addresses sections by that entry id, not by a registered namespace.
  */
 export const ADVISORS_SETTINGS_NAMESPACE = 'advisors'
 
@@ -102,30 +103,28 @@ export interface AdvisorsSettingsHooks {
 }
 
 /**
- * Register the advisors settings namespace when possible.
- * Soft-depends on `settings` so headless profiles without a settings provider
- * still boot — `ctx.inject` waits for the service, and `installSection` falls
- * back to the composition entry if the provider later detaches.
+ * Register this plugin's settings-page policy when a settings provider exists.
  *
- * dsh-settings ≥ 0.1.2: `installSettingsSection` moved onto the provider as
- * `ctx.settings.installSection(owner, ns, schema, entry, hooks)`. The
- * `setSource` thunk is the authoritative read path — `onChange` re-reads it
- * instead of poking `ctx.settings.get` through a cast.
+ * dsh-settings ≥ 0.2.0 replaced `installSection(owner, ns, schema, entry, hooks)`
+ * with schema-derived forms: `SettingsForms.describe()` reads the active
+ * Loader entry's own schema, and `update` / `replace` / `mutate` write through
+ * it. This plugin ships its own Web page over the `/dsh-advisors` RPC channel,
+ * so it only opts out of the auto-generated form (`auto: false`) and keeps its
+ * custom page; the `entry`/`hooks` arguments remain for source compatibility
+ * with the composition-level call site.
+ *
+ * Soft-depends on `settings` so headless profiles without a settings provider
+ * still boot.
  */
 export function installAdvisorsSettings(
   ctx: Context,
-  entry: AdvisorsSettings,
-  hooks: AdvisorsSettingsHooks,
+  _entry: AdvisorsSettings,
+  _hooks: AdvisorsSettingsHooks,
 ): void {
-  let source: () => AdvisorsSettings = () => entry
   ctx.inject(['settings'], (settingsCtx) => {
-    settingsCtx.settings.installSection(ctx, ADVISORS_SETTINGS_NAMESPACE, ADVISORS_SETTINGS_SCHEMA, entry, {
-      setSource: (current) => {
-        source = current
-      },
-      onChange: () => {
-        hooks.apply(settingsToConfig(source()))
-      },
-    })
+    settingsCtx.effect(
+      () => settingsCtx.settings.configure({ auto: false }, ctx.fiber),
+      'advisors settings page policy',
+    )
   })
 }

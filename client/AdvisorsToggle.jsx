@@ -1,7 +1,8 @@
 /**
  * Composer toolbar chip: a per-session advisors on/off switch living in the
- * `conversation.input.left` seat (session-scoped list). Owner props supply the
- * session snapshot; the entry's inject face supplies `rpcCall`.
+ * `conversation.input.left` seat (session-scoped list). The session scope
+ * supplies the plain `sessionId` prop (plus `useSession`/`useProjection`
+ * hooks); the entry's inject face supplies `rpcCall`.
  *
  * Semantics: a session override wins over the global switch. Clicking flips
  * the effective state; when the flipped value matches the global switch the
@@ -28,9 +29,8 @@ function ensureCss() {
   document.head.appendChild(tag)
 }
 
-export function AdvisorsToggle({ session, rpcCall, t }) {
+export function AdvisorsToggle({ sessionId, rpcCall, t }) {
   ensureCss()
-  const sessionId = session?.sessionId
   const [state, setState] = useState(null) // { globalEnabled, override, effective }
   const [busy, setBusy] = useState(false)
   const aliveRef = useRef(true)

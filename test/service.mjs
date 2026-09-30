@@ -96,7 +96,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 20))
   assert.equal(agent.steered.length, 1, 'concern steers')
   assert.equal(agent.injected.length, 0)
   assert.match(agent.steered[0].content[0].text, /异步写入/)
-  assert.equal(agent.steered[0].source.plugin, 'dsh-advisors')
+  assert.equal(agent.steered[0].source.kind, 'dsh-advisors')
   console.log('✓ concern steered with inherited route')
 }
 
@@ -143,7 +143,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 20))
   const { agent, push } = makeAgent(host, 's4')
   host.emit('agent/created', { agent })
   push('turn/start', { turn: 1 })
-  push('user/message', { content: [{ type: 'text', text: 'advisor note follow-up' }], source: { kind: 'plugin', plugin: 'dsh-advisors' } })
+  push('user/message', { content: [{ type: 'text', text: 'advisor note follow-up' }], source: { kind: 'dsh-advisors' } })
   push('assistant/message', { turn: 1, step: 1, message: { content: [{ type: 'text', text: 'fixed' }] } })
   push('turn/end', { turn: 1, reason: { kind: 'completed' } })
   await flush()
@@ -184,6 +184,30 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 20))
   await flush()
   assert.equal(host.calls.length, 0)
   console.log('✓ non-completed turns skipped')
+}
+
+// --- 7. a disabled session buffers nothing; re-enabling reviews only new work ---
+{
+  const host = makeHost(['{"notes": []}'])
+  const service = new AdvisorService(host.ctx, {})
+  const { agent, push } = makeAgent(host, 's8')
+  host.emit('agent/created', { agent })
+  service.setSessionAdvise('s8', false)
+  userTurn(push, { turn: 1 }) // user text: 把缓存改成异步写入
+  await flush()
+  assert.equal(host.calls.length, 0, 'disabled session is not reviewed')
+
+  service.setSessionAdvise('s8', true)
+  push('turn/start', { turn: 2 })
+  push('user/message', { content: [{ type: 'text', text: 'REVIEW-ME-ONLY' }], source: { kind: 'user' } })
+  push('assistant/message', { turn: 2, step: 1, message: { content: [{ type: 'text', text: 'ok' }] } })
+  push('turn/end', { turn: 2, reason: { kind: 'completed' } })
+  await flush()
+  assert.equal(host.calls.length, 1, 're-enabled session is reviewed')
+  const transcript = host.calls[0].messages[0].content[0].text
+  assert.match(transcript, /REVIEW-ME-ONLY/)
+  assert.doesNotMatch(transcript, /缓存改成异步写入/, 'events from the disabled span are not replayed')
+  console.log('✓ disabled session buffers nothing')
 }
 
 console.log('all service integration checks passed')
